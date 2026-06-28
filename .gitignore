@@ -1,0 +1,55 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data directories (large files)
+data/
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# Exports
+exports/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Distribution
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Alembic
+migrations/versions/*.pyc
+
+# Temporary & Specification Files
+IPL2026_DataScraper_Specification.md
+*.csv
+parse_*.py
+test_*.py
+inspect_*.py
+*.html
+*.json
+

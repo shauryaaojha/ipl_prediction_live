@@ -1,0 +1,88 @@
+# IPL 2026 Data Scraper — Main Configuration
+# =============================================
+
+app:
+  name: "IPL2026-DataScraper"
+  version: "1.0.0"
+  environment: "production"  # development / production
+
+scheduling:
+  full_scrape: "0 3 * * *"           # Daily at 3:00 AM
+  incremental_scrape: "*/30 * * * *" # Every 30 minutes during season
+  injury_check: "0 */6 * * *"        # Every 6 hours
+  player_stats_update: "0 4 * * *"   # Daily at 4:00 AM
+  weather_fetch: "0 6 * * *"         # Daily at 6:00 AM
+  db_backup: "0 2 * * *"             # Daily at 2:00 AM
+
+scraping:
+  concurrent_requests: 4
+  request_delay: 1.5              # Seconds between requests (min)
+  request_delay_max: 3.5          # Seconds between requests (max, for randomization)
+  max_retries: 3
+  retry_backoff: 2.0
+  user_agent_rotation: true
+  proxy_rotation: false
+  respect_robots_txt: true
+  download_timeout: 30
+  http2_enabled: true
+  browser_fallback: true          # Use Playwright on 403/429
+
+sources:
+  match_results:
+    primary: "espncricinfo"
+    fallback:
+      - "cricbuzz"
+      - "iplt20"
+  ball_by_ball:
+    primary: "espncricinfo"
+    fallback:
+      - "cricbuzz"
+  player_stats:
+    primary: "espncricinfo"
+    fallback:
+      - "iplt20"
+      - "cricbuzz"
+  playing_xi:
+    primary: "espncricinfo"
+    fallback:
+      - "cricbuzz"
+      - "iplt20"
+  venue:
+    primary: "espncricinfo"
+    fallback:
+      - "iplt20"
+  injuries:
+    primary: "espncricinfo"
+    fallback:
+      - "cricbuzz"
+      - "iplt20"
+
+database:
+  postgres:
+    host: "${DB_HOST:localhost}"
+    port: "${DB_PORT:5432}"
+    database: "${DB_NAME:ipl2026}"
+    username: "${DB_USER:ipl_user}"
+    password: "${DB_PASSWORD:}"
+    pool_size: 10
+    max_overflow: 20
+
+  json_warehouse:
+    # SQLite-based JSON warehouse (replaces MongoDB)
+    path: "${DATA_PATH:./data}/json_warehouse.db"
+
+storage:
+  data_path: "${DATA_PATH:./data}"
+  raw_html_path: "${DATA_PATH:./data}/raw_html"
+  logs_path: "${DATA_PATH:./data}/logs"
+  exports_path: "${DATA_PATH:./data}/exports"
+  cache_path: "${DATA_PATH:./data}/cache"
+  max_log_size_mb: 100
+  log_retention_days: 30
+
+features:
+  enable_shap_export: false
+  enable_fantasy_scrape: false
+  enable_live_updates: false
+  enable_weather: true
+  enable_news_scraping: true

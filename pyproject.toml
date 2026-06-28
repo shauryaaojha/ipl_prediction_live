@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ipl2026-datascraper"
+version = "1.0.0"
+description = "IPL 2026 Championship Prediction System — Data Ingestion Layer"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "SQAC, SRM University"},
+]
+
+dependencies = [
+    "httpx[http2]>=0.27.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
+    "fake-useragent>=1.5.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "pydantic>=2.7.0",
+    "python-dateutil>=2.9.0",
+    "sqlalchemy>=2.0.30",
+    "psycopg2-binary>=2.9.9",
+    "alembic>=1.13.0",
+    "apscheduler>=3.10.0",
+    "typer>=0.12.0",
+    "rich>=13.7.0",
+    "loguru>=0.7.0",
+    "pyyaml>=6.0.0",
+    "python-dotenv>=1.0.0",
+    "rapidfuzz>=3.9.0",
+    "tqdm>=4.66.0",
+    "tenacity>=8.3.0",
+]
+
+[project.optional-dependencies]
+browser = ["playwright>=1.45.0"]
+notifications = ["win10toast>=0.9", "plyer>=2.1.0"]
+export = ["pyarrow>=16.0.0"]
+all = [
+    "playwright>=1.45.0",
+    "win10toast>=0.9",
+    "plyer>=2.1.0",
+    "pyarrow>=16.0.0",
+]
+
+[project.scripts]
+ipl-scraper = "src.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]

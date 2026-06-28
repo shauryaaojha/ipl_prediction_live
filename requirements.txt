@@ -1,0 +1,53 @@
+# ============================================
+# IPL 2026 Data Scraper — Python Dependencies
+# ============================================
+# Install: pip install -r requirements.txt
+
+# --- Core HTTP & Scraping ---
+httpx[http2]>=0.27.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+fake-useragent>=1.5.0
+
+# --- Data Processing ---
+pandas>=2.2.0
+numpy>=1.26.0
+pydantic>=2.7.0
+python-dateutil>=2.9.0
+
+# --- Database ---
+sqlalchemy>=2.0.30
+psycopg2-binary>=2.9.9
+alembic>=1.13.0
+
+# --- Scheduling & CLI ---
+apscheduler>=3.10.0
+typer>=0.12.0
+rich>=13.7.0
+
+# --- Logging ---
+loguru>=0.7.0
+
+# --- Configuration ---
+pyyaml>=6.0.0
+python-dotenv>=1.0.0
+
+# --- Name Matching ---
+rapidfuzz>=3.9.0
+
+# --- Progress Bars ---
+tqdm>=4.66.0
+
+# --- Retry Logic ---
+tenacity>=8.3.0
+
+# --- Windows Notifications (optional) ---
+# win10toast>=0.9; sys_platform == 'win32'
+# plyer>=2.1.0
+
+# --- Browser Automation (optional) ---
+# playwright>=1.45.0
+
+# --- Data Export (optional) ---
+# pyarrow>=16.0.0      # For Parquet export
+# fastparquet>=2024.5   # Alternative Parquet engine

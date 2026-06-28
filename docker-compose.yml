@@ -1,0 +1,64 @@
+# ============================================
+# IPL 2026 Data Scraper — Docker Compose
+# ============================================
+# Usage:
+#   docker compose up -d postgres     # Start PostgreSQL only
+#   docker compose run scraper ...    # Run scraper commands
+#   docker compose up scraper         # Run default (--help)
+#   docker compose down               # Stop everything
+
+services:
+  # ---------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: ipl2026_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ipl2026
+      POSTGRES_USER: ipl_user
+      POSTGRES_PASSWORD: ipl_secure_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/setup_databases.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ipl_user -d ipl2026"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------
+  # IPL Scraper Application
+  # ---------------------------------------------------------------
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ipl2026_scraper
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ipl2026
+      DB_USER: ipl_user
+      DB_PASSWORD: ipl_secure_2026
+      DATA_PATH: /app/data
+      LOG_LEVEL: INFO
+      PYTHONPATH: /app
+    volumes:
+      - scraper_data:/app/data
+    # Default: show help. Override with:
+    #   docker compose run scraper src.cli db-health
+    entrypoint: ["python", "-m"]
+    command: ["src.cli", "--help"]
+
+volumes:
+  pgdata:
+    name: ipl2026_pgdata
+  scraper_data:
+    name: ipl2026_scraper_data
