@@ -446,6 +446,197 @@ def info():
 
 
 # ===========================================================================
+# Validate (Phase 1 — Data Integrity)
+# ===========================================================================
+
+@app.command("validate")
+def validate():
+    """Run comprehensive data integrity audits (Phase 1 sign-off)."""
+    from .scripts.validate_integrity import print_report
+    from .storage.connection import get_engine
+
+    console.print("\n[bold cyan]🔍 Running Data Integrity Validation...[/bold cyan]\n")
+    engine = get_engine()
+    issues = print_report(engine)
+    raise typer.Exit(code=0 if issues == 0 else 1)
+
+
+# ===========================================================================
+# Analytics (Phase 1.5 — Warehouse Management)
+# ===========================================================================
+
+analytics_app = typer.Typer(
+    name="analytics",
+    help="Analytics warehouse management — create views, refresh data, generate reports.",
+)
+app.add_typer(analytics_app, name="analytics")
+
+
+@analytics_app.command("init")
+def analytics_init():
+    """Create/recreate all materialized views and star schema tables."""
+    from .analytics.warehouse import apply_analytics_schema
+
+    console.print("\n[bold cyan]📦 Applying analytics schema...[/bold cyan]\n")
+    try:
+        apply_analytics_schema()
+        console.print("[bold green]✅ Analytics schema applied successfully![/bold green]\n")
+    except Exception as e:
+        console.print(f"[bold red]❌ Failed: {e}[/bold red]\n")
+        raise typer.Exit(code=1)
+
+
+@analytics_app.command("refresh")
+def analytics_refresh():
+    """Refresh all materialized views with latest data."""
+    from .analytics.warehouse import refresh_all_views
+
+    console.print("\n[bold cyan]🔄 Refreshing materialized views...[/bold cyan]\n")
+    results = refresh_all_views(concurrently=True)
+
+    table = Table(title="Materialized View Refresh Results", show_header=True)
+    table.add_column("View", style="cyan")
+    table.add_column("Duration", justify="right")
+    table.add_column("Status", justify="center")
+
+    total_time = 0
+    for view_name, duration in results.items():
+        if duration < 0:
+            table.add_row(view_name, "—", "[red]FAILED[/red]")
+        else:
+            total_time += duration
+            table.add_row(view_name, f"{duration:.2f}s", "[green]✅[/green]")
+
+    table.add_row("[bold]TOTAL[/]", f"[bold]{total_time:.2f}s[/]", "")
+    console.print(table)
+    console.print()
+
+
+@analytics_app.command("status")
+def analytics_status():
+    """Show status and row counts for all materialized views."""
+    from .analytics.warehouse import get_view_status
+
+    console.print("\n[bold cyan]📊 Analytics View Status[/bold cyan]\n")
+    status = get_view_status()
+
+    table = Table(show_header=True)
+    table.add_column("View", style="cyan")
+    table.add_column("Rows", justify="right")
+    table.add_column("Status", justify="center")
+
+    for s in status:
+        if s["exists"]:
+            table.add_row(s["view_name"], f"{s['row_count']:,}", "[green]✅ EXISTS[/green]")
+        else:
+            table.add_row(s["view_name"], "—", "[red]❌ MISSING[/red]")
+
+    console.print(table)
+    console.print()
+
+
+@analytics_app.command("report")
+def analytics_report():
+    """Generate a summary analytics report from materialized views."""
+    from .analytics.warehouse import get_summary_report
+
+    console.print("\n[bold cyan]📈 IPL Analytics Summary Report[/bold cyan]\n")
+    report = get_summary_report()
+
+    if "error" in report:
+        console.print(f"[bold red]Error: {report['error']}[/bold red]")
+        console.print("[dim]Have you run 'analytics init' and 'analytics refresh' first?[/dim]")
+        raise typer.Exit(code=1)
+
+    # Top Run Scorers
+    if report.get("top_run_scorers"):
+        table = Table(title="🏏 Top 10 Run Scorers (Career)", show_header=True)
+        table.add_column("#", justify="right", style="dim")
+        table.add_column("Player", style="cyan")
+        table.add_column("Runs", justify="right", style="bold")
+        table.add_column("Mat", justify="right")
+        table.add_column("Inn", justify="right")
+        table.add_column("SR", justify="right")
+        table.add_column("Avg", justify="right")
+        table.add_column("4s", justify="right")
+        table.add_column("6s", justify="right")
+
+        for i, p in enumerate(report["top_run_scorers"], 1):
+            table.add_row(
+                str(i), p["player"], str(p["runs"]), str(p["matches"]),
+                str(p["innings"]), f"{p['sr']:.1f}", f"{p['avg']:.1f}",
+                str(p["fours"]), str(p["sixes"]),
+            )
+        console.print(table)
+        console.print()
+
+    # Top Wicket Takers
+    if report.get("top_wicket_takers"):
+        table = Table(title="🎳 Top 10 Wicket Takers (Career)", show_header=True)
+        table.add_column("#", justify="right", style="dim")
+        table.add_column("Player", style="cyan")
+        table.add_column("Wkts", justify="right", style="bold")
+        table.add_column("Mat", justify="right")
+        table.add_column("Overs", justify="right")
+        table.add_column("Econ", justify="right")
+        table.add_column("Avg", justify="right")
+        table.add_column("SR", justify="right")
+
+        for i, p in enumerate(report["top_wicket_takers"], 1):
+            table.add_row(
+                str(i), p["player"], str(p["wickets"]), str(p["matches"]),
+                f"{p['overs']:.0f}", f"{p['econ']:.2f}",
+                f"{p['avg']:.1f}" if p["avg"] else "—",
+                f"{p['sr']:.1f}" if p["sr"] else "—",
+            )
+        console.print(table)
+        console.print()
+
+    # Top Venues
+    if report.get("top_venues"):
+        table = Table(title="🏟️  Top 10 Venues (by Matches)", show_header=True)
+        table.add_column("#", justify="right", style="dim")
+        table.add_column("Venue", style="cyan")
+        table.add_column("City")
+        table.add_column("Mat", justify="right")
+        table.add_column("Avg 1st", justify="right")
+        table.add_column("Avg 2nd", justify="right")
+        table.add_column("Chase %", justify="right")
+
+        for i, v in enumerate(report["top_venues"], 1):
+            table.add_row(
+                str(i), v["venue"], v["city"], str(v["matches"]),
+                f"{v['avg_1st']:.0f}", f"{v['avg_2nd']:.0f}", f"{v['chase_pct']:.0f}%",
+            )
+        console.print(table)
+        console.print()
+
+    # Team Standings (latest season)
+    if report.get("team_standings"):
+        table = Table(
+            title=f"🏆 Team Standings — IPL {report.get('latest_season', '')}",
+            show_header=True,
+        )
+        table.add_column("#", justify="right", style="dim")
+        table.add_column("Team", style="cyan")
+        table.add_column("P", justify="right")
+        table.add_column("W", justify="right", style="green")
+        table.add_column("L", justify="right", style="red")
+        table.add_column("Win%", justify="right", style="bold")
+        table.add_column("BatW", justify="right")
+        table.add_column("ChaseW", justify="right")
+
+        for i, t in enumerate(report["team_standings"], 1):
+            table.add_row(
+                str(i), f"{t['code']} ({t['name']})", str(t["played"]),
+                str(t["wins"]), str(t["losses"]), f"{t['win_pct']:.0f}%",
+                str(t["bat_first_w"]), str(t["chase_w"]),
+            )
+        console.print(table)
+        console.print()
+
+
+# ===========================================================================
 # Entry Point
 # ===========================================================================
 
@@ -456,3 +647,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
