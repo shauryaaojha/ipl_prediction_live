@@ -51,3 +51,8 @@ tenacity>=8.3.0
 # --- Data Export (optional) ---
 # pyarrow>=16.0.0      # For Parquet export
 # fastparquet>=2024.5   # Alternative Parquet engine
+
+# --- API Server ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+

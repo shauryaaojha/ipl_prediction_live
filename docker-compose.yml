@@ -57,6 +57,34 @@ services:
     entrypoint: ["python", "-m"]
     command: ["src.cli", "--help"]
 
+  # ---------------------------------------------------------------
+  # FastAPI REST API Server
+  # ---------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ipl2026_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ipl2026
+      DB_USER: ipl_user
+      DB_PASSWORD: ipl_secure_2026
+      DATA_PATH: /app/data
+      LOG_LEVEL: INFO
+      PYTHONPATH: /app
+    volumes:
+      - scraper_data:/app/data
+    entrypoint: ["python", "-m"]
+    command: ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
 volumes:
   pgdata:
     name: ipl2026_pgdata
